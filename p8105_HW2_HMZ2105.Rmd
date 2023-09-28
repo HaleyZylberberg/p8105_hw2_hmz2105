@@ -30,3 +30,8 @@ Mr_trash_df =
     values_to = "litter_amount"
   )
 ```
+
+Calculate new homes powered column.
+```{r}
+mutate (Mr_trash_df, homes_powered = (weight_total*500)/30)
+```
