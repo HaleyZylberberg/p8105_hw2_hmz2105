@@ -4,10 +4,29 @@ author: "Haley Zylberberg"
 output: github_document
 ---
 
-Will first call in tidyverse library.
+Will first call in tidyverse and readxl libraries.
 
 ```{r}
 library(tidyverse)
+library(readxl)
 ```
 
-## Problem 2
+## Problem 2: Clean Trash Wheel Datasets
+
+First, import Mr. Trash Wheel dataset and clean.
+```{r}
+Mr_trash_df = 
+  read_excel("data/202207 Trash Wheel Collection Data.xlsx",
+  sheet = "Mr. Trash Wheel", skip = 1, n_max=547) |> 
+  janitor::clean_names() |>
+  select (- x15, - x16, - month, - year) |>
+  rename (weight_total = weight_tons, 
+          volume_total = volume_cubic_yards) |>
+  mutate(trash_wheel = "Mr Trash Wheel") |> 
+  relocate(trash_wheel) |>
+   pivot_longer(
+    plastic_bottles:sports_balls,
+    names_to = "litter_type",
+    values_to = "litter_amount"
+  )
+```
