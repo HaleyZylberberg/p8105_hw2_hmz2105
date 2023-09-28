@@ -22,7 +22,7 @@ Mr_trash_df =
   select (- x15, - x16, - month, - year) |>
   rename (weight_total = weight_tons, 
           volume_total = volume_cubic_yards) |>
-  mutate(trash_wheel = "Mr Trash Wheel") |> 
+  mutate(trash_wheel = "Mr") |> 
   relocate(trash_wheel) |>
    pivot_longer(
     plastic_bottles:sports_balls,
@@ -31,7 +31,45 @@ Mr_trash_df =
   )
 ```
 
-Calculate new homes powered column.
+Calculate new homes powered column based on note that 1 ton garbage = 500KW of electricity and 30KW powers 1 house.
 ```{r}
 mutate (Mr_trash_df, homes_powered = (weight_total*500)/30)
+```
+
+Next, import Prof. Trash Wheel dataset, clean, and create new homes_powered variable.
+```{r}
+Prof_trash_df = 
+  read_excel("data/202207 Trash Wheel Collection Data.xlsx",
+  sheet = "Professor Trash Wheel", skip = 1, n_max=547) |> 
+  janitor::clean_names() |>
+  select (- month, - year) |>
+  rename (weight_total = weight_tons, 
+          volume_total = volume_cubic_yards) |>
+  mutate(trash_wheel = "Prof") |> 
+  relocate(trash_wheel) |>
+   pivot_longer(
+    plastic_bottles:chip_bags,
+    names_to = "litter_type",
+    values_to = "litter_amount"
+  ) |>
+mutate (homes_powered = (weight_total*500)/30)
+```
+
+Next, import Gwynnda Trash Wheel dataset, clean, and create new homes_powered variable.
+```{r}
+Gwynnda_trash_df = 
+  read_excel("data/202207 Trash Wheel Collection Data.xlsx",
+  sheet = "Gwynnda Trash Wheel", skip = 1, n_max=547) |> 
+  janitor::clean_names() |>
+  select (- month, - year) |>
+  rename (weight_total = weight_tons, 
+          volume_total = volume_cubic_yards) |>
+  mutate(trash_wheel = "Gwynnda") |> 
+  relocate(trash_wheel) |>
+   pivot_longer(
+    plastic_bottles:plastic_bags,
+    names_to = "litter_type",
+    values_to = "litter_amount"
+  ) |>
+mutate (homes_powered = (weight_total*500)/30)
 ```
