@@ -3,3 +3,11 @@ title: "P8105 HW 2"
 author: "Haley Zylberberg"
 output: github_document
 ---
+
+Will first call in tidyverse library.
+
+```{r}
+library(tidyverse)
+```
+
+## Problem 2
