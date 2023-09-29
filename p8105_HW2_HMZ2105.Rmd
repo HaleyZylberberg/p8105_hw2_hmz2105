@@ -15,7 +15,7 @@ library(readxl)
 
 First, import Mr. Trash Wheel dataset and clean.
 ```{r}
-Mr_trash_df = 
+mr_trash_df = 
   read_excel("data/202207 Trash Wheel Collection Data.xlsx",
   sheet = "Mr. Trash Wheel", skip = 1, n_max=547) |> 
   janitor::clean_names() |>
@@ -33,14 +33,14 @@ Mr_trash_df =
 
 Calculate new homes powered column based on note that 1 ton garbage = 500KW of electricity and 30KW powers 1 house.
 ```{r}
-mutate (Mr_trash_df, homes_powered = (weight_total*500)/30)
+mutate (mr_trash_df, homes_powered = (weight_total*500)/30)
 ```
 
 Next, import Prof. Trash Wheel dataset, clean, and create new homes_powered variable.
 ```{r}
-Prof_trash_df = 
+prof_trash_df = 
   read_excel("data/202207 Trash Wheel Collection Data.xlsx",
-  sheet = "Professor Trash Wheel", skip = 1, n_max=547) |> 
+  sheet = "Professor Trash Wheel", skip = 1, n_max =94) |> 
   janitor::clean_names() |>
   select (- month, - year) |>
   rename (weight_total = weight_tons, 
@@ -57,9 +57,9 @@ mutate (homes_powered = (weight_total*500)/30)
 
 Next, import Gwynnda Trash Wheel dataset, clean, and create new homes_powered variable.
 ```{r}
-Gwynnda_trash_df = 
+gwynnda_trash_df = 
   read_excel("data/202207 Trash Wheel Collection Data.xlsx",
-  sheet = "Gwynnda Trash Wheel", skip = 1, n_max=547) |> 
+  sheet = "Gwynnda Trash Wheel", skip = 1, n_max = 106) |> 
   janitor::clean_names() |>
   select (- month, - year) |>
   rename (weight_total = weight_tons, 
@@ -72,4 +72,10 @@ Gwynnda_trash_df =
     values_to = "litter_amount"
   ) |>
 mutate (homes_powered = (weight_total*500)/30)
+```
+
+Combine all 3 trash wheels dataframes.
+```{r}
+trash_wheel_df = 
+  bind_rows(mr_trash_df, prof_trash_df, gwynnda_trash_df)
 ```
