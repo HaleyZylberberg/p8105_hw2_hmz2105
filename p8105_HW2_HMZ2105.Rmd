@@ -76,4 +76,8 @@ trash_wheel_df =
   bind_rows(mr_trash_df, prof_trash_df, gwynnda_trash_df)
 ```
 
+The dataframe Trash Wheel consists of combined data from Mister Trash Wheel, Professor Trash Wheel and Gwynnda Trash Wheel. There are `r nrow(trash_wheel_df)` observations. The variables in the dataframe are `r names(trash_wheel_df)`. The types of litter collected are `r unique(trash_wheel_df[["litter_type"]])`. The total weight of trash collected by Professor Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Prof") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. The total weight of trash collected by Mr. Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Mr") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. And the total weight of trash collected by Gwynnda Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Gwynnda") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. 
+
+
+
 
