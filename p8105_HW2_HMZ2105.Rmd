@@ -33,6 +33,7 @@ mr_trash_df =
 
 Calculate new homes powered column based on note that 1 ton garbage = 500KW of electricity and 30KW powers 1 house.
 ```{r}
+mr_trash_df = 
 mutate (mr_trash_df, homes_powered = (weight_total*500)/30)
 ```
 
