@@ -13,6 +13,8 @@ library(readxl)
 
 ## Problem 2: Clean Trash Wheel Datasets
 
+This problem uses the dataset Trash Wheel which includes data regarding trash that was removed from the Inner Harbor in Baltimore, Maryland.
+
 First, import Trash Wheel dataset, specifically sheet Mr Trash Wheel, and clean. We need to skip column 1 as it contains pictures, not include blank columns, and also not import the last row as it includes data summary elements. We also need to convert dumpert variable to numeric as it is coded as characters. And finally, we need to pivot the trash types in order to make a tidy dataset.
 ```{r}
 mr_trash_df = 
@@ -79,8 +81,39 @@ trash_wheel_df =
 The dataframe Trash Wheel consists of combined data from Mister Trash Wheel, Professor Trash Wheel and Gwynnda Trash Wheel and detailes the weight of trash and type of trash that these wheels have collected from `r range(trash_wheel_df[["year"]])[1]` to `r range(trash_wheel_df$year)[2]`. There are `r nrow(trash_wheel_df)` observations. The variables in the dataframe are `r names(trash_wheel_df)`. The types of litter collected are `r unique(trash_wheel_df[["litter_type"]])`. The total weight of trash collected by Professor Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Prof") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. The total weight of trash collected by Mr. Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Mr") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. And the total weight of trash collected by Gwynnda Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Gwynnda") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. Mr Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Mr") |> group_by(dumpster) |> pull(homes_powered) |> mean()` homes on average, Professor Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Prof") |> group_by(dumpster) |> pull(homes_powered) |> mean()` on average, and Gwynnda Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Gwynnda") |> group_by(dumpster) |> pull(homes_powered) |> mean()` homes on average. The total number of cigarette butts collected by Gwynnda Trash Wheel in July 2021 was `r filter(trash_wheel_df, trash_wheel == "Gwynnda", year == "2021", month == "July", litter_type == "cigarette_butts") |> pull(litter_amount) |> sum()`.
 
 
+## Problem 3
+
+This problem includes the dataset MCI and amyloid which was collcted as part of an observation study and incldues biomarkers from patients who developed Alzheimer's disease, as measured by development of mild cognitive impairment (MCI).
+
+First import MCI and begin the cleaning process. Will skip the first row as this contains notes about the dataset. Recode age to be male (0) vs female (1) and presence of apoe4 as carrier (1) vs non_carrier (0). Rename education to education_years, to specify the measurement of the variable. Change age variables to numeric, and also change "." to missing values (i.e. NA) in age_at_onset variable.
 
 
+```{r}
+MCI_df = 
+  read_csv("data/MCI_baseline.csv", skip = 1) |> 
+  janitor::clean_names() |>
+mutate(
+ sex = case_match(
+    sex, 1 ~ 'female', 0 ~ 'male'),
+ apoe4 = case_match(
+   apoe4, 1 ~ "carrier",0 ~ "non_carrier"),
+ age_at_onset = ifelse(
+   age_at_onset == ".", NA, age_at_onset)
+ ) |>
+  rename (education_years = education)|> 
+  subset(!is.na(current_age) & current_age != "",
+         !is.na(age_at_onset) & age_at_onset != "")
+```
 
 
+The study recruited `r nrow(MCI_df)` participants. The average age of all participants at baseline was `r mean(MCI_df[["current_age"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males. The average education in years of all participants is `r mean(MCI_df[["education_years"]])`. The proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
+
+However, only `r sum(complete.cases(MCI_df))` participants developed MCI. Will remove these participants as the study goal was to include patients who developed MCI.And then redo data description. 
+
+```{r}
+MCI_df = 
+na.omit(MCI_df)
+```
+
+The average age of participants with MCI at baseline was `r mean(MCI_df[["current_age"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females with MCI and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males with MCI. The average education in years of participants with MCI is `r mean(MCI_df[["education_years"]])`. Among participants with MCI, the proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
 
