@@ -130,14 +130,11 @@ pivot_longer(
     values_to = "time_values"
   )
 
-missing_sum_by_participant = 
-  amyloid_df |>
-  group_by(study_id)|>
-  summarise(Missing_Sum = sum(is.na(time_values))) |>
-  filter(Missing_Sum != 0)
-
 ```
 
 This dataset contains data on for `r length(unique(amyloid_df[["study_id"]]))` participants. However, there are `r nrow(amyloid_df |>group_by(study_id)|> summarise(Missing_Sum = sum(is.na(time_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
+
+Next will determine whether some participants are only present in one dataset.
+
 
 
