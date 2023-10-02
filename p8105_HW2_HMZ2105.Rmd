@@ -85,7 +85,7 @@ The dataframe Trash Wheel consists of combined data from Mister Trash Wheel, Pro
 
 This problem includes the dataset MCI and amyloid which was collcted as part of an observation study and incldues biomarkers from patients who developed Alzheimer's disease, as measured by development of mild cognitive impairment (MCI).
 
-First import MCI and begin the cleaning process. Will skip the first row as this contains notes about the dataset. Recode age to be male (0) vs female (1) and presence of apoe4 as carrier (1) vs non_carrier (0). Rename education to education_years, to specify the measurement of the variable. Change"." to missing values (i.e. NA) in age_at_onset variable, and make education_years numeric. Specify that this is from the MCI dataset by adding a column called MCI.
+First import MCI and begin the cleaning process. Will skip the first row as this contains notes about the dataset. Recode age to be male (0) vs female (1) and presence of apoe4 as carrier (1) vs non_carrier (0). Change"." to missing values (i.e. NA) in age_at_onset variable. Rename education to education_years, current_age to age_baseline, and age_at_onset to age_MCI. Make education_years numeric. Specify that this is from the MCI dataset by adding a column called MCI.
 
 
 ```{r}
@@ -100,23 +100,23 @@ mutate(
  age_at_onset = ifelse(
    age_at_onset == ".", NA, age_at_onset)
  ) |>
-  rename(education_years = education) |>
+    rename(education_years = education, age_baseline = current_age, age_MCI = age_at_onset) |>
   mutate(mci = "mci") |> 
   mutate(education_years = as.numeric(education_years))
 ```
 
 
-The study recruited `r nrow(MCI_df)` participants. The average age of all participants at baseline was `r mean(MCI_df[["current_age"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males. The average education in years of all participants is `r mean(MCI_df[["education_years"]])`. The proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
+The study recruited `r nrow(MCI_df)` participants. The average age of all participants at baseline was `r mean(MCI_df[["age_baseline"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males. The average education in years of all participants is `r mean(MCI_df[["education_years"]])`. The proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
 
-However, only `r sum(complete.cases(MCI_df))` participants developed MCI. Will remove these participants as the study goal was to include patients who developed MCI.And then redo data description. Also change age at onset to a numeric value. 
+However, only `r sum(complete.cases(MCI_df))` participants developed MCI. Will remove these participants as the study goal was to include patients who developed MCI.And then redo data description. Also age_MCI to a numeric value. 
 
 ```{r}
 MCI_df = 
 na.omit(MCI_df) |>
-    mutate(age_at_onset = as.numeric(age_at_onset))
+    mutate(age_MCI = as.numeric(age_MCI))
 ```
 
-The average age of participants with MCI at baseline was `r mean(MCI_df[["current_age"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females with MCI and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males with MCI. The average education in years of participants with MCI is `r mean(MCI_df[["education_years"]])`. Among participants with MCI, the proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
+The average age of participants with MCI at baseline was `r mean(MCI_df[["age_baseline"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females with MCI and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males with MCI. The average education in years of participants with MCI is `r mean(MCI_df[["education_years"]])`. Among participants with MCI, the proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
 
 First import the amyloid biomarkers dataset and begin the cleaning process. This dataset includes time since amyloid was measured. Will skip the first row as this contains notes about the dataset. Rename baseline to time_0. Then pivot data so that each variable has its own column. Next rename study_id column to id in order to match MCI dataset. And also add in column called amyloid in preperation for merging.
 
@@ -154,7 +154,7 @@ MCI_full_unique_df =
 
 There are `r nrow(MCI_both_df)` participants in both datasets. There are `r filter(MCI_full_unique_df, amyloid == "amyloid" & is.na(mci)) |> pull(id) |> length()` participants who appear in amyloid but not MCI and `r filter(MCI_full_unique_df, mci == "mci" & is.na(amyloid)) |> pull(id) |> length()` participants who appear in mci but not amyloid.
 
-Among participants present in both datasets, the average baseline age is `r mean(MCI_both_df[["current_age"]])` and age at onset is `r mean(MCI_both_df[["age_at_onset"]])`. There are `r subset(MCI_both_df, !duplicated(id)) |> filter (sex =="female") |> pull("sex") |> length()` females.  There are `r nrow(MCI_both_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(time_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
+Among participants present in both datasets, the average baseline age is `r mean(MCI_both_df[["age_baseline"]])` and age at onset is `r mean(MCI_both_df[["age_MCI"]])`. There are `r subset(MCI_both_df, !duplicated(id)) |> filter (sex =="female") |> pull("sex") |> length()` females. The number of apoe4 carriers is `r subset(MCI_both_df, !duplicated(id)) |> filter (apoe4 =="carrier") |> pull(apoe4) |> length()`. There are `r nrow(MCI_both_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(time_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
 
 Export dataset
 
