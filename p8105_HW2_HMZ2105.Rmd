@@ -156,4 +156,9 @@ There are `r nrow(MCI_both_df)` participants in both datasets. There are `r filt
 
 Among participants present in both datasets, the average baseline age is `r mean(MCI_both_df[["current_age"]])` and age at onset is `r mean(MCI_both_df[["age_at_onset"]])`. There are `r subset(MCI_both_df, !duplicated(id)) |> filter (sex =="female") |> pull("sex") |> length()` females.  There are `r nrow(MCI_both_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(time_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
 
+Export dataset
 
+```{r}
+
+write_csv(MCI_both_df, "data/MCI_both_df.csv")
+```
