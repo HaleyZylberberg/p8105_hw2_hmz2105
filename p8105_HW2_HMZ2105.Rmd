@@ -13,7 +13,7 @@ library(readxl)
 
 ## Problem 2: Clean Trash Wheel Datasets
 
-First, import Mr. Trash Wheel dataset and clean.
+First, import Trash Wheel dataset, specifically sheet Mr Trash Wheel, and clean. We need to skip column 1 as it contains pictures, not include blank columns, and also not import the last row as it includes data summary elements. We also need to convert dumpert variable to numeric as it is coded as characters. And finally, we need to pivot the trash types in order to make a tidy dataset.
 ```{r}
 mr_trash_df = 
   read_excel("data/202207 Trash Wheel Collection Data.xlsx",
