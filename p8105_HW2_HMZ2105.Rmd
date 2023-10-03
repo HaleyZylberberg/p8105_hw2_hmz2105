@@ -18,7 +18,7 @@ This problem uses the dataset Trash Wheel which includes data regarding trash th
 First, import Trash Wheel dataset, specifically sheet Mr Trash Wheel, and clean. We need to skip column 1 as it contains pictures, not include blank columns, and also not import the last row as it includes data summary elements. We also need to convert dumpert variable to numeric as it is coded as characters. And finally, we need to pivot the trash types in order to make a tidy dataset.
 ```{r}
 mr_trash_df = 
-  read_excel("data/202207 Trash Wheel Collection Data.xlsx",
+  read_excel("data/202309 Trash Wheel Collection Data.xlsx",
   sheet = "Mr. Trash Wheel", skip = 1, range = cell_cols(1:14)) |> 
   janitor::clean_names() |>
   subset(!is.na(dumpster) & dumpster != "") |>
@@ -41,14 +41,14 @@ mutate (mr_trash_df, homes_powered = (weight_tons*500)/30)
 Next, import Prof. Trash Wheel dataset, clean, and create new homes_powered variable.
 ```{r}
 prof_trash_df = 
-  read_excel("data/202207 Trash Wheel Collection Data.xlsx",
+  read_excel("data/202309 Trash Wheel Collection Data.xlsx",
   sheet = "Professor Trash Wheel", skip = 1, range = cell_cols(1:13)) |> 
   janitor::clean_names() |>
   subset(!is.na(dumpster) & dumpster != "") |>
   mutate(trash_wheel = "Prof", year = as.numeric(year)) |> 
   relocate(trash_wheel) |>
    pivot_longer(
-    plastic_bottles:chip_bags,
+    plastic_bottles:wrappers,
     names_to = "litter_type",
     values_to = "litter_amount"
   ) |>
@@ -58,7 +58,7 @@ mutate (homes_powered = (weight_tons*500)/30)
 Next, import Gwynnda Trash Wheel dataset, clean, and create new homes_powered variable.
 ```{r}
 gwynnda_trash_df = 
-  read_excel("data/202207 Trash Wheel Collection Data.xlsx",
+  read_excel("data/202309 Trash Wheel Collection Data.xlsx",
   sheet = "Gwynnda Trash Wheel", skip = 1, range = cell_cols(1:11)) |> 
   janitor::clean_names() |>
   subset(!is.na(dumpster) & dumpster != "") |>
