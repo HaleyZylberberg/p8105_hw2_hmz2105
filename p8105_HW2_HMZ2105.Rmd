@@ -11,12 +11,64 @@ library(tidyverse)
 library(readxl)
 ```
 
+## Problem 1: 
+
+This problem uses data regarding political party of the president and economic markers compiled by five-thirty-eight in order to show how p hacking can occur. 
+
+First will import pols_month which includes data regarding politician party affilication. Will code 2 in president variable as other as not sure what the 2 corresponds to. 
+
+```{r import and clean pols_month}
+pols_month_df = 
+  read_csv("data/pols-month.csv") |>
+ separate(mon, into = c("year", "month", "day"), sep = "-") |>
+   mutate(year = as.integer(year),
+         month = as.integer(month),
+         day = as.integer(day)) |>
+  mutate(
+  month = case_match(
+    month, 1 ~ 'Jan', 2 ~ 'Feb', 3~ 'Mar', 4~ 'Apr', 5~ 'May', 6~ 'Jun',
+  7~ 'Jul', 8~ 'Aug', 9~ 'Sep', 10~'Oct', 11~ 'Nov', 12~'Dec')) |>
+  mutate(
+    president = recode(prez_gop, "0" = "dem", "1" = "gop", "2" = "other")) |>
+   select(-day, -starts_with("prez")) 
+```
+
+Next import and clean snp file which contains data on Standard & Poor’s stock market index (S&P).
+
+```{r import and clean snp}
+snp_df = 
+  read_csv("data/snp.csv") |>
+separate(date, into = c("year", "month", "day"), sep = "/") |>
+   mutate(year = as.integer(year),
+         month = as.integer(month),
+         day = as.integer(day)) |>
+  mutate(
+  month = case_match(
+    month, 1 ~ 'Jan', 2 ~ 'Feb', 3~ 'Mar', 4~ 'Apr', 5~ 'May', 6~ 'Jun',
+  7~ 'Jul', 8~ 'Aug', 9~ 'Sep', 10~'Oct', 11~ 'Nov', 12~'Dec'))  |>
+  select(-day) 
+```
+
+Next we import and clean the unemployment dataset.
+
+```{r import and clean unemployment}
+unemployment_df = 
+  read_csv("data/unemployment.csv") |>
+rename(year = Year) |>
+  pivot_longer(
+    Jan:Dec, 
+    names_to = "month",
+    values_to = "unemployment_percentage"
+  )
+```
+
+
 ## Problem 2: Clean Trash Wheel Datasets
 
 This problem uses the dataset Trash Wheel which includes data regarding trash that was removed from the Inner Harbor in Baltimore, Maryland.
 
 First, import Trash Wheel dataset, specifically sheet Mr Trash Wheel, and clean. We need to skip column 1 as it contains pictures, not include blank columns, and also not import the last row as it includes data summary elements. We also need to convert dumpert variable to numeric as it is coded as characters. 
-```{r}
+```{r clean and tidy Mr Trash Wheel}
 mr_trash_df = 
   read_excel("data/202309 Trash Wheel Collection Data.xlsx",
   sheet = "Mr. Trash Wheel", skip = 1, range = cell_cols(1:14)) |> 
@@ -27,7 +79,7 @@ mr_trash_df =
 ```
 
 Calculate new homes powered column based on note that 1 ton garbage = 500KW of electricity and 30KW powers 1 house.
-```{r}
+```{r, add homes_powered column}
 mr_trash_df = 
 mutate (mr_trash_df, homes_powered = (weight_tons*500)/30)
 ```
