@@ -18,19 +18,23 @@ This problem uses data regarding political party of the president and economic m
 First will import pols_month which includes data regarding politician party affilication. Will code 2 in president variable as other as not sure what the 2 corresponds to. 
 
 ```{r import and clean pols_month}
+
 pols_month_df = 
   read_csv("data/pols-month.csv") |>
- separate(mon, into = c("year", "month", "day"), sep = "-") |>
-   mutate(year = as.integer(year),
-         month = as.integer(month),
-         day = as.integer(day)) |>
+separate(mon, into = c("year", "month", "day"), sep = "-") |>
   mutate(
+    year = as.integer(year),
+    month = as.integer(month),
+    month_name = month.abb[month]
+  ) |>
+   mutate(
   month = case_match(
     month, 1 ~ 'Jan', 2 ~ 'Feb', 3~ 'Mar', 4~ 'Apr', 5~ 'May', 6~ 'Jun',
-  7~ 'Jul', 8~ 'Aug', 9~ 'Sep', 10~'Oct', 11~ 'Nov', 12~'Dec')) |>
-  mutate(
+  7~ 'Jul', 8~ 'Aug', 9~ 'Sep', 10~'Oct', 11~ 'Nov', 12~'Dec'))  |>
+    mutate(
     president = recode(prez_gop, "0" = "dem", "1" = "gop", "2" = "other")) |>
-   select(-day, -starts_with("prez")) 
+   select(year, month, everything(), -day, -starts_with("prez")) 
+
 ```
 
 Next import and clean snp file which contains data on Standard & Poor’s stock market index (S&P).
@@ -38,15 +42,24 @@ Next import and clean snp file which contains data on Standard & Poor’s stock 
 ```{r import and clean snp}
 snp_df = 
   read_csv("data/snp.csv") |>
-separate(date, into = c("year", "month", "day"), sep = "/") |>
-   mutate(year = as.integer(year),
+separate(date, into = c("month", "day", "year"), sep = "/")  |>
+      mutate(year = as.integer(year),
          month = as.integer(month),
          day = as.integer(day)) |>
   mutate(
   month = case_match(
     month, 1 ~ 'Jan', 2 ~ 'Feb', 3~ 'Mar', 4~ 'Apr', 5~ 'May', 6~ 'Jun',
-  7~ 'Jul', 8~ 'Aug', 9~ 'Sep', 10~'Oct', 11~ 'Nov', 12~'Dec'))  |>
-  select(-day) 
+  7~ 'Jul', 8~ 'Aug', 9~ 'Sep', 10~'Oct', 11~ 'Nov', 12~'Dec')) |>
+  select(year, month, everything(), -day)  
+  
+snp_df$year = ifelse(snp_df$year >= "50" & snp_df$year <= "99", paste0("19", snp_df$year), snp_df$year)
+
+snp_df$year = ifelse(snp_df$year >= "00" & snp_df$year <= "23", paste0("20", snp_df$year), snp_df$year)
+
+snp_df$year <- as.numeric(snp_df$year)
+
+snp_df$year <- as.integer(snp_df$year)
+
 ```
 
 Next we import and clean the unemployment dataset.
@@ -61,6 +74,22 @@ rename(year = Year) |>
     values_to = "unemployment_percentage"
   )
 ```
+
+Next we merge the datasets.
+
+```{r merge}
+five_thirty_eight_df = 
+  left_join(pols_month_df, snp_df) |>
+  left_join(x = _, y = unemployment_df)
+```
+
+The pools_month data has `r nrow(pols_month_df)` observations and `r ncol(pols_month_df)` variables. The data covers the years `r range(pols_month_df$year)[1]` to `r range(pols_month_df$year)[2]`. The dataset shows the party affiliation for politicians and the year that they were in office. 
+
+The snp data shows the value that the S&P closed for various dates. The dataset has `r nrow(snp_df)` observations and `r ncol(snp_df)` variables. It ranges from years `r range(snp_df$year)[1]` to `r range(snp_df$year)[2]`. 
+
+The unemployment data detailes the unemployment rate from years `r range(unemployment_df$year)[1]` to `r range(unemployment_df$year)[2]`. The dataset has `r nrow(unemployment_df)` observations and `r ncol(unemployment_df)` variables.
+
+For whavever reason once the data is merged the close values from the snp dataset are all missing. 
 
 
 ## Problem 2: Clean Trash Wheel Datasets
@@ -97,7 +126,7 @@ mutate (homes_powered = (weight_tons*500)/30)
 ```
 
 Next, import Gwynnda Trash Wheel dataset, clean, and create new homes_powered variable.
-```{r}
+```{r import gwynnda and clean}
 gwynnda_trash_df = 
   read_excel("data/202309 Trash Wheel Collection Data.xlsx",
   sheet = "Gwynnda Trash Wheel", skip = 1, range = cell_cols(1:11)) |> 
@@ -109,7 +138,7 @@ mutate (homes_powered = (weight_tons*500)/30)
 ```
 
 Combine all 3 trash wheels dataframes.
-```{r}
+```{r combine trash wheel}
 trash_wheel_df = 
   bind_rows(mr_trash_df, prof_trash_df, gwynnda_trash_df)
 ```
@@ -124,7 +153,7 @@ This problem includes the dataset MCI and amyloid which was collcted as part of 
 First import MCI and begin the cleaning process. Will skip the first row as this contains notes about the dataset. Recode age to be male (1) vs female (0) and presence of apoe4 as carrier (1) vs non_carrier (0). Change"." to missing values (i.e. NA) in age_at_onset variable. Rename education to education_years, current_age to age_baseline, and age_at_onset to age_MCI. Make education_years numeric. Specify that this is from the MCI dataset by adding a column called MCI. Also will change age_MCI to a numeric value. 
 
 
-```{r}
+```{r import MCI baseline and clean}
 MCI_df = 
   read_csv("data/MCI_baseline.csv", skip = 1) |> 
   janitor::clean_names() |>
@@ -147,7 +176,7 @@ The study recruited `r nrow(MCI_df)` participants. The average age of all partic
 However, there are patients who developed MCI prior to being enrolled in the study (n= `r  na.omit(MCI_df) |>filter(age_MCI >= age_baseline) |> pull(id) |> length()`) and also missing participants (n=`r nrow(MCI_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(age_MCI))) |>filter(Missing_Sum != 0))`). Will remove these participants and then redo data description.
 
 
-```{r}
+```{r subset MCI}
 MCI_df = 
 na.omit(MCI_df) |>
   filter(age_MCI >= age_baseline)
@@ -157,7 +186,7 @@ After removing these patients, there are now `r nrow(MCI_df)` participants.The a
 
 First import the amyloid biomarkers dataset and begin the cleaning process. This dataset includes amyloid measurements at various time points throughout the study. Will skip the first row as this contains notes about the dataset. Rename baseline to time_0. Then pivot data so that each amyloid and time has its own column. Next rename study_id column to id in order to match MCI dataset. Change amyloid values to numeric from character. And also add in column called amyloid in preparation for merging.
 
-```{r}
+```{r import amyloid and clean}
 amyloid_df = 
   read_csv("data/mci_amyloid.csv", skip = 1) |>
   janitor::clean_names() |>
@@ -177,7 +206,7 @@ This dataset contains data on for `r length(unique(amyloid_df[["id"]]))` partici
 
 Next will determine whether some participants are only present in one dataset or both. Will make a dataset that only includes participants present in both sets, and another dataset that contains all patients.
 
-```{r}
+```{r merge MCI and amyloid}
 
 MCI_both_df = 
   inner_join(amyloid_df, MCI_df, by="id")
@@ -194,7 +223,7 @@ Among participants in the joined dataset, the average baseline age is `r mean(MC
 
 Export dataset
 
-```{r}
+```{r export}
 
 write_csv(MCI_both_df, "data/MCI_both_df.csv")
 ```
