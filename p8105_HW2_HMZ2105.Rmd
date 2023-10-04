@@ -15,7 +15,7 @@ library(readxl)
 
 This problem uses the dataset Trash Wheel which includes data regarding trash that was removed from the Inner Harbor in Baltimore, Maryland.
 
-First, import Trash Wheel dataset, specifically sheet Mr Trash Wheel, and clean. We need to skip column 1 as it contains pictures, not include blank columns, and also not import the last row as it includes data summary elements. We also need to convert dumpert variable to numeric as it is coded as characters. And finally, we need to pivot the trash types in order to make a tidy dataset.
+First, import Trash Wheel dataset, specifically sheet Mr Trash Wheel, and clean. We need to skip column 1 as it contains pictures, not include blank columns, and also not import the last row as it includes data summary elements. We also need to convert dumpert variable to numeric as it is coded as characters. 
 ```{r}
 mr_trash_df = 
   read_excel("data/202309 Trash Wheel Collection Data.xlsx",
@@ -23,13 +23,7 @@ mr_trash_df =
   janitor::clean_names() |>
   subset(!is.na(dumpster) & dumpster != "") |>
   mutate(trash_wheel = "Mr", year = as.numeric(year)) |> 
-  relocate(trash_wheel) |>
-   pivot_longer(
-    plastic_bottles:sports_balls,
-    names_to = "litter_type",
-    values_to = "litter_amount"
-  )
-
+  relocate(trash_wheel)
 ```
 
 Calculate new homes powered column based on note that 1 ton garbage = 500KW of electricity and 30KW powers 1 house.
@@ -47,11 +41,6 @@ prof_trash_df =
   subset(!is.na(dumpster) & dumpster != "") |>
   mutate(trash_wheel = "Prof", year = as.numeric(year)) |> 
   relocate(trash_wheel) |>
-   pivot_longer(
-    plastic_bottles:wrappers,
-    names_to = "litter_type",
-    values_to = "litter_amount"
-  ) |>
 mutate (homes_powered = (weight_tons*500)/30)
 ```
 
@@ -64,11 +53,6 @@ gwynnda_trash_df =
   subset(!is.na(dumpster) & dumpster != "") |>
   mutate(trash_wheel = "Gwynnda", year = as.numeric(year)) |> 
   relocate(trash_wheel) |>
-   pivot_longer(
-    plastic_bottles:plastic_bags,
-    names_to = "litter_type",
-    values_to = "litter_amount"
-  ) |>
 mutate (homes_powered = (weight_tons*500)/30)
 ```
 
@@ -78,14 +62,14 @@ trash_wheel_df =
   bind_rows(mr_trash_df, prof_trash_df, gwynnda_trash_df)
 ```
 
-The dataframe Trash Wheel consists of combined data from Mister Trash Wheel, Professor Trash Wheel and Gwynnda Trash Wheel and detailes the weight of trash and type of trash that these wheels have collected from `r range(trash_wheel_df[["year"]])[1]` to `r range(trash_wheel_df$year)[2]`. There are `r nrow(trash_wheel_df)` observations. The variables in the dataframe are `r names(trash_wheel_df)`. The types of litter collected are `r unique(trash_wheel_df[["litter_type"]])`. The total weight of trash collected by Professor Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Prof") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. The total weight of trash collected by Mr. Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Mr") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. And the total weight of trash collected by Gwynnda Trash Wheel is `r sum((trash_wheel_df |> filter(trash_wheel == "Gwynnda") |> group_by(dumpster) |> summarize(trash_collected = first(weight_tons)))[["trash_collected"]])`. Mr Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Mr") |> group_by(dumpster) |> pull(homes_powered) |> mean()` homes on average, Professor Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Prof") |> group_by(dumpster) |> pull(homes_powered) |> mean()` on average, and Gwynnda Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Gwynnda") |> group_by(dumpster) |> pull(homes_powered) |> mean()` homes on average. The total number of cigarette butts collected by Gwynnda Trash Wheel in July 2021 was `r filter(trash_wheel_df, trash_wheel == "Gwynnda", year == "2021", month == "July", litter_type == "cigarette_butts") |> pull(litter_amount) |> sum()`.
+The dataframe Trash Wheel consists of combined data from Mister Trash Wheel, Professor Trash Wheel and Gwynnda Trash Wheel and details the weight of trash and type of trash that these wheels have collected from `r range(trash_wheel_df[["year"]])[1]` to `r range(trash_wheel_df$year)[2]`. There are `r nrow(trash_wheel_df)` observations. The variables in the dataframe are `r names(trash_wheel_df)`. The total weight of trash collected by Professor Trash Wheel is `r filter(trash_wheel_df, trash_wheel == "Prof") |> pull(weight_tons) |> sum()`. The total weight of trash collected by Mr. Trash Wheel is `r filter(trash_wheel_df, trash_wheel == "Mr") |> pull(weight_tons) |> sum()`. And the total weight of trash collected by Gwynnda Trash Wheel is `r filter(trash_wheel_df, trash_wheel == "Gwynnda") |> pull(weight_tons) |> sum()`. Mr Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Mr")|> pull(homes_powered) |> mean()` homes on average, Professor Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Prof") |> pull(homes_powered) |> mean()` on average, and Gwynnda Trash Wheel powered `r filter(trash_wheel_df, trash_wheel == "Gwynnda") |> pull(homes_powered) |> mean()` homes on average. The total number of cigarette butts collected by Gwynnda Trash Wheel in July 2021 was `r filter(trash_wheel_df, trash_wheel == "Gwynnda", year == "2021", month == "July") |> pull(cigarette_butts) |> sum()`.
 
 
 ## Problem 3
 
 This problem includes the dataset MCI and amyloid which was collcted as part of an observation study and incldues biomarkers from patients who developed Alzheimer's disease, as measured by development of mild cognitive impairment (MCI).
 
-First import MCI and begin the cleaning process. Will skip the first row as this contains notes about the dataset. Recode age to be male (0) vs female (1) and presence of apoe4 as carrier (1) vs non_carrier (0). Change"." to missing values (i.e. NA) in age_at_onset variable. Rename education to education_years, current_age to age_baseline, and age_at_onset to age_MCI. Make education_years numeric. Specify that this is from the MCI dataset by adding a column called MCI. Also will change age_MCI to a numeric value. 
+First import MCI and begin the cleaning process. Will skip the first row as this contains notes about the dataset. Recode age to be male (1) vs female (0) and presence of apoe4 as carrier (1) vs non_carrier (0). Change"." to missing values (i.e. NA) in age_at_onset variable. Rename education to education_years, current_age to age_baseline, and age_at_onset to age_MCI. Make education_years numeric. Specify that this is from the MCI dataset by adding a column called MCI. Also will change age_MCI to a numeric value. 
 
 
 ```{r}
@@ -94,7 +78,7 @@ MCI_df =
   janitor::clean_names() |>
 mutate(
  sex = case_match(
-    sex, 1 ~ 'female', 0 ~ 'male'),
+    sex, 0 ~ 'female', 1 ~ 'male'),
  apoe4 = case_match(
    apoe4, 1 ~ "carrier",0 ~ "non_carrier"),
  age_at_onset = ifelse(
@@ -102,7 +86,7 @@ mutate(
  ) |>
     rename(education_years = education, age_baseline = current_age, age_MCI = age_at_onset) |>
   mutate(mci = "mci") |> 
-  mutate(education_years = as.numeric(education_years))
+  mutate(education_years = as.numeric(education_years), age_MCI = as.numeric(age_MCI))
 ```
 
 
@@ -119,7 +103,7 @@ na.omit(MCI_df) |>
 
 After removing these patients, there are now `r nrow(MCI_df)` participants.The average age of participants with MCI at baseline was `r mean(MCI_df[["age_baseline"]])`. There are `r filter (MCI_df, sex == "female") |> pull("sex") |> length()` females with MCI and `r filter (MCI_df, sex == "male") |> pull("sex") |> length()` males with MCI. The average education in years of participants with MCI is `r mean(MCI_df[["education_years"]])`. Among participants with MCI, the proportion of women who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "female" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "female")` and the proportion of men who are apoe4 carriers are `r sum(MCI_df[["sex"]] == "male" & MCI_df[["apoe4"]] == "carrier") / sum(MCI_df[["sex"]] == "male")`.
 
-First import the amyloid biomarkers dataset and begin the cleaning process. This dataset includes time since amyloid was measured. Will skip the first row as this contains notes about the dataset. Rename baseline to time_0. Then pivot data so that each variable has its own column. Next rename study_id column to id in order to match MCI dataset. And also add in column called amyloid in preperation for merging.
+First import the amyloid biomarkers dataset and begin the cleaning process. This dataset includes amyloid measurements at various time points throughout the study. Will skip the first row as this contains notes about the dataset. Rename baseline to time_0. Then pivot data so that each amyloid and time has its own column. Next rename study_id column to id in order to match MCI dataset. Change amyloid values to numeric from character. And also add in column called amyloid in preperation for merging.
 
 ```{r}
 amyloid_df = 
@@ -129,21 +113,22 @@ amyloid_df =
 pivot_longer(
     time_0:time_8,
     names_to = "time",
-    values_to = "time_values"
+    values_to = "amyloid_values"
   ) |>
   rename(id = study_id) |>
-  mutate (amyloid = "amyloid")
+  mutate (amyloid = "amyloid") |>
+  mutate(amyloid_values = as.numeric(amyloid_values))
 
 ```
 
-This dataset contains data on for `r length(unique(amyloid_df[["id"]]))` participants. However, there are `r nrow(amyloid_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(time_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
+This dataset contains data on for `r length(unique(amyloid_df[["id"]]))` participants. However, there are `r nrow(amyloid_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(amyloid_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value. The time points collected are `r unique(amyloid_df[["time"]])`. 
 
 Next will determine whether some participants are only present in one dataset or both. Will make a dataset that only includes participants present in both sets, and another dataset that contains all patients.
 
 ```{r}
 
 MCI_both_df = 
-  inner_join(amyloid_df, MCI_df)
+  inner_join(amyloid_df, MCI_df, by="id")
 
 MCI_full_df =
   full_join(amyloid_df, MCI_df) |>
@@ -153,7 +138,7 @@ MCI_full_df =
 
 There are `r nrow(MCI_both_df)` participants in both datasets. There are `r filter(MCI_full_df, amyloid == "amyloid" & is.na(mci)) |> pull(id) |> length()` participants who appear in amyloid but not MCI and `r filter(MCI_full_df, mci == "mci" & is.na(amyloid)) |> pull(id) |> length()` participants who appear in mci but not amyloid.
 
-Among participants present in both datasets, the average baseline age is `r mean(MCI_both_df[["age_baseline"]])` and age at onset is `r mean(MCI_both_df[["age_MCI"]])`. There are `r subset(MCI_both_df, !duplicated(id)) |> filter (sex =="female") |> pull("sex") |> length()` females. The number of apoe4 carriers is `r subset(MCI_both_df, !duplicated(id)) |> filter (apoe4 =="carrier") |> pull(apoe4) |> length()`. There are `r nrow(MCI_both_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(time_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
+Among participants present in both datasets, the average baseline age is `r mean(MCI_both_df[["age_baseline"]])` and age at onset is `r mean(MCI_both_df[["age_MCI"]])`. There are `r subset(MCI_both_df, !duplicated(id)) |> filter (sex =="female") |> pull("sex") |> length()` females. The number of apoe4 carriers is `r subset(MCI_both_df, !duplicated(id)) |> filter (apoe4 =="carrier") |> pull(apoe4) |> length()`. There are `r nrow(MCI_both_df |>group_by(id)|> summarise(Missing_Sum = sum(is.na(amyloid_values))) |>filter(Missing_Sum != 0))` participants with at least 1 missing time value.
 
 Export dataset
 
